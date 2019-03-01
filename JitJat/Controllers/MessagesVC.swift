@@ -12,7 +12,8 @@ import Firebase
 
 class MessagesVC: UIViewController {
     
-    var latestMessages = [String : Message]()
+    var messages = [String : Message]()
+    var latestMessages = [Message]()
     var ref = Database.database().reference()
     var conversationKey : String?
     
@@ -61,7 +62,10 @@ class MessagesVC: UIViewController {
                                                 let name = snap.childSnapshot(forPath: "name").value as? String ?? ""
                                                 let message = Message(text: text, senderID: senderID, timestamp: timestamp, isIncomingMessage: currentID == senderID, senderName: name, conversationKey: key, profilePictureURL: imgURL)
                                                 
-                                                self.latestMessages[key] = message
+                                                self.messages[key] = message
+                                                self.latestMessages = Array(self.messages.values)
+                                                self.latestMessages.sort(by: { $0.timestamp > $1.timestamp })
+                                                
                                                 DispatchQueue.main.async {
                                                     self.messagesTableView.reloadData()
                                                 }
@@ -95,7 +99,7 @@ class MessagesVC: UIViewController {
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if let vc = segue.destination as? ChatVC {
             vc.conversationKey = conversationKey
-            vc.title = latestMessages[conversationKey!]?.senderName
+            vc.title = messages[conversationKey!]?.senderName
         }
     }
 }
@@ -111,14 +115,14 @@ extension MessagesVC: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = messagesTableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! ConversationCell
-        let value = Array(self.latestMessages.values)[indexPath.row]
+        let value = latestMessages[indexPath.row]
         cell.message = value
         
         return cell
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let key = Array(self.latestMessages.keys)[indexPath.row]
+        let key = latestMessages[indexPath.row].conversationKey
         conversationKey = key
         
         self.performSegue(withIdentifier: "gotoChat", sender: nil)
