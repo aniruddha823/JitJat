@@ -11,7 +11,7 @@ import Firebase
 import SkyFloatingLabelTextField
 import Toast_Swift
 
-class LoginVC: UIViewController {
+class LoginVC: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var emailField: SkyFloatingLabelTextField!
     @IBOutlet weak var passwordField: SkyFloatingLabelTextField!
     @IBOutlet weak var loginBTN: UIButton!
@@ -29,6 +29,8 @@ class LoginVC: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        emailField.delegate = self; emailField.returnKeyType = .done
+        passwordField.delegate = self; passwordField.returnKeyType = .done
         passwordField.isSecureTextEntry = true
         loginBTN.backgroundColor = self.view.backgroundColor
 
@@ -51,6 +53,11 @@ class LoginVC: UIViewController {
                 self.view.makeToast("Incorrect email & password. Please try again.", duration: 2.5, position: .center)
             }
         }
+    }
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        self.view.endEditing(true)
+        return false
     }
 }
 

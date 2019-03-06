@@ -12,10 +12,12 @@ import Firebase
 import FirebaseDatabase
 import Toast_Swift
 
-class SignUpVC: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+class SignUpVC: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITextFieldDelegate {
     
     var ref = Database.database().reference()
     var storageRef = Storage.storage().reference()
+    var activeTextField = UITextField()
+    var isKeyboardAppear = false
     
     @IBOutlet weak var cancelBTN: UIButton!
     @IBOutlet weak var clearBTN: UIButton!
@@ -42,8 +44,16 @@ class SignUpVC: UIViewController, UIImagePickerControllerDelegate, UINavigationC
     
     override func viewDidLoad() {
         self.hideKeyboardTapAwayGesture()
+        usernameField.delegate = self; usernameField.returnKeyType = .done
+        nameField.delegate = self; nameField.returnKeyType = .done
+        emailField.delegate = self; emailField.returnKeyType = .done
+        passwordField.delegate = self; passwordField.returnKeyType = .done
+        retypePasswordField.delegate = self; retypePasswordField.returnKeyType = .done
         
         ViewAppearance.setupCircularImageView(view: profilePictureView)
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
     }
     
     private func handleSignUp() {
@@ -123,5 +133,44 @@ class SignUpVC: UIViewController, UIImagePickerControllerDelegate, UINavigationC
         }
         
         dismiss(animated: true, completion: nil)
+    }
+    
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        self.activeTextField = textField
+    }
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        self.view.endEditing(true)
+        return false
+    }
+    
+    // This method shifts the view up if the selected textfield is hiding
+    // behind the keyboard & gives a cushion of 30px.
+    @objc func keyboardWillShow(notification: NSNotification) {
+        if !isKeyboardAppear {
+            if let keyboardSize = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue {
+                if self.view.frame.origin.y == 0 {
+                    if ((self.view.frame.height - keyboardSize.height) < (activeTextField.frame.origin.y + activeTextField.frame.height + 30)) {
+                        self.view.frame.origin.y -= (activeTextField.frame.origin.y - (self.view.frame.height - keyboardSize.height - 30 - activeTextField.frame.height))
+                    }
+                }
+            }
+            isKeyboardAppear = true
+        }
+    }
+    
+    // Resets the view position
+    @objc func keyboardWillHide(notification: NSNotification) {
+        if isKeyboardAppear {
+            if self.view.frame.origin.y != 0{
+                self.view.frame.origin.y = 0
+            }
+
+            isKeyboardAppear = false
+        }
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 }
